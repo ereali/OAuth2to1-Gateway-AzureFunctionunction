@@ -14,7 +14,7 @@ variables:
   functionAppName: 'SC-APIGateway'
 
   # Agent VM image name
-  vmImageName: 'win-2022'
+  vmImageName: 'windows-2022'
 
   # Working Directory
   workingDirectory: '$(System.DefaultWorkingDirectory)/'
