@@ -1,3 +1,9 @@
+//Edward Reali - Sooner Card | University of Oklahoma
+//Copyright Edward Reali (c) 2022 All Rights Reserved
+//Proprietary and confidential
+
+//Begin C# Script and main method handler
+
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +18,7 @@ namespace DoorOverrideAPI
     public static class DoorOverrideAPI
     {
         [FunctionName("DoorOverrideAPI")]
+        //Allows for HTTP request and logging to be initiated
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
@@ -36,6 +43,7 @@ namespace DoorOverrideAPI
             string clientHostName = GetEnvironmentVariable("HOST_NAME");
             log.LogInformation(clientHostName);
 
+            //Transfer env vars to service
             string consumerKey = GetEnvironmentVariable("CONSUMER_KEY");
             string consumerSecret = GetEnvironmentVariable("CONSUMER_SECRET");
             string transactUsername = GetEnvironmentVariable("TRANSACT_USERNAME");
@@ -43,6 +51,7 @@ namespace DoorOverrideAPI
 
             string doorOverride = "";
 
+            //Needs to become try-catch block
             if (doorID.ToString() == null || doorState.ToString() == null || doorScheduledState.ToString() == null || requestID == null)
             {
                 log.LogInformation("Door ID, door state, door scheduled state, or request ID is null");
