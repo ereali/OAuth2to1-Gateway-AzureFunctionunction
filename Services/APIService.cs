@@ -37,6 +37,8 @@ namespace DoorOverrideAPI.Services
             {
                 string uri = "https://" + clientHostName + UrlConstants.temporaryToken;
 
+                Console.WriteLine("URI: " + uri);
+
                 var clientOptions = new RestClientOptions(uri)
                 {
                     ThrowOnAnyError = true,
@@ -45,15 +47,21 @@ namespace DoorOverrideAPI.Services
 
                 var client = new RestClient(clientOptions);
 
-                var request = new RestRequest(Method.Post.ToString());
+                //var request = new RestRequest(Method.Post.ToString());
 
-                request.AddParameter("text/plain", "", ParameterType.RequestBody);
+                var request = new RestRequest()
+                    .AddParameter("text/plain", "", ParameterType.RequestBody);
 
-                var signature = OAuth1Authenticator.ForRequestToken(consumerKey, consumerSecret, RestSharp.Authenticators.OAuth.OAuthSignatureMethod.HmacSha1);
+                // Console.WriteLine($"Consumer Key: {consumerKey}");
+                // Console.WriteLine($"Consumer Secret: {consumerSecret}");
 
-                await signature.Authenticate(client, request);
+                client.Authenticator = OAuth1Authenticator.ForRequestToken(consumerKey, consumerSecret);
 
-                var tokenResponse = await client.ExecuteAsync(request);
+                await client.Authenticator.Authenticate(client, request);
+
+                var tokenResponse = await client.PostAsync(request, cancellationToken: default);
+                
+                Console.WriteLine($"Token Response: {tokenResponse.Content}");
 
                 if (tokenResponse.IsSuccessful)
                 {
