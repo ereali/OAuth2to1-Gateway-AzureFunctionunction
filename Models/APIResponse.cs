@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 
-public class DoorOverrideRequest
+public class APIResponse
 {
     [JsonProperty("RequestId")]
     public string RequestId { get; set; }
@@ -16,4 +16,6 @@ public class DoorOverrideRequest
     [JsonProperty("DurationOverrideValue")]
     public int DurationOverrideValue { get; set; }
 
+    [JsonProperty("Success")]
+    public bool Success { get; set; }
 }

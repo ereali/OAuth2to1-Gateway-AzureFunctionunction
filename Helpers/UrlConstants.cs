@@ -18,7 +18,7 @@ namespace DoorOverrideAPI.Helpers
         //Door override api's
         public const string buildingAreas = "/transact/api/merchant/buildingAreas";
         public const string doorListGetAllText = "/transact/api/security/doors/list?pageSize=2000";
-        public const string doorOverride = "transact/api/v1/security/doors/state/override";
+        public const string doorOverride = "/transact/api/v1/security/doors/state/override";
         public const string doorListGetAllMaster = "/transact/api/v1/security/doors";
 
         //Merchant api's

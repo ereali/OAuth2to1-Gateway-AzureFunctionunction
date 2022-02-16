@@ -1,8 +1,8 @@
-﻿//#load "SessionTokenRequest.csx"
-//#load "SessionTokenResponse.csx"
-//#load "DoorOverrideRequest.csx"
+﻿//Edward Reali - Sooner Card | University of Oklahoma
+//Copyright Edward Reali (c) 2022 All Rights Reserved
+//Proprietary and confidential
 
-//comment test
+//Methods that handle specfic API calls against TSE
 
 using System.Net;
 using Newtonsoft.Json;
@@ -21,48 +21,59 @@ namespace DoorOverrideAPI.Services
     public class APIService
     {
 
+        //initialize variables
         public string tempToken { get; set; }
         public string tempTokenSecret { get; set; }
         public string accessToken { get; set; }
         public string accessTokenSecret { get; set; }
 
+        //Init constructor
         public APIService()
         {
 
         }
 
+        //Get temp token
         public async Task<bool> PostTempToken(string clientHostName, string consumerKey, string consumerSecret)
         {
+            //Begins async task to get temp token
             return await Task.Run(async () =>
             {
+                //Init uri
                 string uri = "https://" + clientHostName + UrlConstants.temporaryToken;
 
                 Console.WriteLine("URI: " + uri);
 
+                //Init restsharp client options
                 var clientOptions = new RestClientOptions(uri)
                 {
                     ThrowOnAnyError = true,
                     Timeout = 3000
                 };
 
+                //Init restsharp client
                 var client = new RestClient(clientOptions);
 
-                //var request = new RestRequest(Method.Post.ToString());
-
+                //Init restsharp request with headers/parameters
                 var request = new RestRequest()
                     .AddParameter("text/plain", "", ParameterType.RequestBody);
 
                 // Console.WriteLine($"Consumer Key: {consumerKey}");
                 // Console.WriteLine($"Consumer Secret: {consumerSecret}");
 
+                //Perform OAuth1 authentication
                 client.Authenticator = OAuth1Authenticator.ForRequestToken(consumerKey, consumerSecret);
-
+                
+                //Execute authentication and generate OAuth1 token
                 await client.Authenticator.Authenticate(client, request);
 
+                //Get API response
                 var tokenResponse = await client.PostAsync(request, cancellationToken: default);
                 
+                //Output response to console
                 Console.WriteLine($"Token Response: {tokenResponse.Content}");
 
+                //Handle response and return true if successful
                 if (tokenResponse.IsSuccessful)
                 {
                     //Make exception clause if not responding
@@ -84,26 +95,36 @@ namespace DoorOverrideAPI.Services
         {
             return await Task.Run(async () =>
             {
+                //Init uri
                 string uri = "https://" + clientHostName + UrlConstants.realToken;
 
+                //Init restsharp client options
                 var clientOptions = new RestClientOptions(uri)
                 {
                     ThrowOnAnyError = true,
                     Timeout = 3000
                 };
 
+                //Init restsharp client
                 var client = new RestClient(clientOptions);
 
-                var request = new RestRequest(Method.Post.ToString());
+                //Init restsharp request with headers/parameters
+                var request = new RestRequest()
+                    .AddParameter("text/plain", "", ParameterType.RequestBody);
+                
+                //Perform OAuth1 authentication
+                client.Authenticator = OAuth1Authenticator.ForAccessToken(consumerKey, consumerSecret, tempTokenIn, tempTokenSecretIn, RestSharp.Authenticators.OAuth.OAuthSignatureMethod.HmacSha1);
 
-                request.AddParameter("text/plain", "", ParameterType.RequestBody);
+                //Execute authentication and generate OAuth1 token
+                await client.Authenticator.Authenticate(client, request);
 
-                var signature = OAuth1Authenticator.ForAccessToken(consumerKey, consumerSecret, tempTokenIn, tempTokenSecretIn, RestSharp.Authenticators.OAuth.OAuthSignatureMethod.HmacSha1);
+                //Get API response
+                var tokenResponse = await client.PostAsync(request, cancellationToken: default);
+                
+                //Output response to console
+                Console.WriteLine($"Token Response: {tokenResponse.Content}");
 
-                await signature.Authenticate(client, request);
-
-                var tokenResponse = await client.ExecuteAsync(request);
-
+                //Handle response and return true if successful
                 if (tokenResponse.IsSuccessful)
                 {
                     //Make exception clause if not responding
@@ -124,20 +145,22 @@ namespace DoorOverrideAPI.Services
         {
             return await Task.Run(async () =>
             {
-                var uri = "https://" + clientHostName + UrlConstants.validateUser;
+                //Init uri
+                string uri = "https://" + clientHostName + UrlConstants.validateUser;
 
+                Console.WriteLine("URI: " + uri);
+
+                //Init restsharp client options
                 var clientOptions = new RestClientOptions(uri)
                 {
                     ThrowOnAnyError = true,
                     Timeout = 8000
                 };
 
+                //Init restsharp client
                 var client = new RestClient(clientOptions);
-
-                var request = new RestRequest(Method.Post.ToString());
-
-                var signature = OAuth1Authenticator.ForAccessToken(consumerKey, consumerSecret, accessTokenIn, accessTokenSecretIn, RestSharp.Authenticators.OAuth.OAuthSignatureMethod.HmacSha1);
-
+                
+                //Prepare request body for serialization
                 var sessionTokenRequest = new SessionTokenRequest
                 {
                     Id = requestID,
@@ -147,27 +170,46 @@ namespace DoorOverrideAPI.Services
                     IsSuperUser = false
                 };
 
+                //Console.WriteLine($"{requestID} {transactUsername} {transactPassword}");
+
+                //Serialize request body
                 string requestBody = JsonConvert.SerializeObject(sessionTokenRequest);
 
-                request.AddHeader("Accept", "application/json");
-                request.AddHeader("Content-Type", "application/json");
-                request.AddHeader("Prefer", "status=200");
-                request.AddHeader("BbTS", "ApplicationName=SC-APIGateway,OsHostName=https://soonerapigateway.azurewebsites.net/api/HttpTrigger1?code=10NsKCf4BYvdXDLr0VUZKnOYcboPva5Sy0Jy8w/SjuWXkESyOosWtg==,IpAddress=13.65.92.72,OsUser=FunctionRunner");
+                Console.WriteLine($"Request Body: {requestBody}");
 
-                request.AddParameter("application/json", requestBody, ParameterType.RequestBody);
+                //Init restsharp request with headers/parameters
+                var request = new RestRequest()
+                    .AddHeader("Accept", "application/json")
+                    .AddHeader("Content-Type", "application/json")
+                    .AddHeader("Prefer", "status=200")
+                    .AddHeader("BbTS", "ApplicationName=SC-APIGateway,OsHostName=https://soonerapigateway.azurewebsites.net/api/HttpTrigger1?code=10NsKCf4BYvdXDLr0VUZKnOYcboPva5Sy0Jy8w/SjuWXkESyOosWtg==,IpAddress=13.65.92.72,OsUser=FunctionRunner")
+                    //.AddParameter("application/json", requestBody, ParameterType.RequestBody);
+                    .AddStringBody(requestBody, "application/json");
+                
+                //Perform OAuth1 authentication
+                //client.Authenticator = OAuth1Authenticator.ForAccessToken(consumerKey, consumerSecret, accessTokenIn, accessTokenSecretIn, RestSharp.Authenticators.OAuth.OAuthSignatureMethod.HmacSha1);
 
-                await signature.Authenticate(client, request);
+                client.Authenticator = OAuth1Authenticator.ForAccessToken(consumerKey, consumerSecret, accessTokenIn, accessTokenSecretIn, RestSharp.Authenticators.OAuth.OAuthSignatureMethod.HmacSha1);
+                //Execute authentication and generate OAuth1 token
+                await client.Authenticator.Authenticate(client, request);
 
-                var sessionResponse = await client.ExecuteAsync(request);
-
+                //Try to get API response
                 try
                 {
-                    var sessionToken = await Task.Run(() => JsonConvert.DeserializeObject<SessionTokenResponse>(sessionResponse.Content));
+                    //Get API response
 
+                    var sessionResponse = await client.PostAsync(request, cancellationToken: default);
+                    
+                    //Output response to console
+                    Console.WriteLine($"Session Response: {sessionResponse.Content}");
+
+                    //Handle response and return a valid session token if successful
                     if (sessionResponse.IsSuccessful)
                     {
+                        var sessionToken = await Task.Run(() => JsonConvert.DeserializeObject<SessionTokenResponse>(sessionResponse.Content));
                         return sessionToken;
                     }
+                    //Handle response and return a session token error if unsuccessful
                     else
                     {
                         var sessionTokenError = new SessionTokenResponse();
@@ -176,11 +218,10 @@ namespace DoorOverrideAPI.Services
                 }
                 catch (Exception e)
                 {
-                    //error handler in-case real token request fails
+                    Console.WriteLine(e.Message);
                     var sessionTokenError = new SessionTokenResponse();
                     return sessionTokenError;
                 }
-
             });
         }
 
@@ -189,25 +230,27 @@ namespace DoorOverrideAPI.Services
         {
             return await Task.Run(async () =>
             {
+                //Init uri
                 string uri = "https://" + clientHostName + UrlConstants.doorOverride;
 
-                var clientOptions = new RestClientOptions()
+                Console.WriteLine("URI: " + uri);
+
+                //Init restsharp client options
+                var clientOptions = new RestClientOptions(uri)
                 {
                     ThrowOnAnyError = true,
                     Timeout = 5000
                 };
 
+                //Init restsharp client
                 var client = new RestClient(clientOptions);
-
-                var request = new RestRequest(Method.Post.ToString());
-
-                var signature = OAuth1Authenticator.ForAccessToken(consumerKey, consumerSecret, accessToken, accessTokenSecret, RestSharp.Authenticators.OAuth.OAuthSignatureMethod.HmacSha1);
 
                 var doorList = doorID.Split(',')
                      .Where(m => int.TryParse(m, out _))
                      .Select(m => int.Parse(m))
                      .ToList();
 
+                //Prepare request body for serialization
                 var doorOverrideRequest = new DoorOverrideRequest
                 {
                     RequestId = requestID,
@@ -216,21 +259,34 @@ namespace DoorOverrideAPI.Services
                     DurationOverrideValue = doorScheduledState
                 };
 
-                string requestBody = JsonConvert.SerializeObject(doorOverrideRequest);
+                //Prepare request with headers/parameters
+                var request = new RestRequest()
+                    .AddHeader("Accept", "application/json")
+                    .AddHeader("Prefer", "status=200")
+                    .AddHeader("Content-Type", "application/json")
+                    .AddHeader("SessionToken", sessionToken)
+                    .AddJsonBody(doorOverrideRequest);
 
-                request.AddHeader("Accept", "application/json");
-                request.AddHeader("Prefer", "status=200");
-                request.AddHeader("SessionToken", sessionToken);
+                client.Authenticator = OAuth1Authenticator.ForAccessToken(consumerKey, consumerSecret, accessToken, accessTokenSecret, RestSharp.Authenticators.OAuth.OAuthSignatureMethod.HmacSha1);
 
-                request.AddParameter("application/json", requestBody, ParameterType.RequestBody);
+                //string requestBody = JsonConvert.SerializeObject(doorOverrideRequest);
 
-                await signature.Authenticate(client, request);
+                // request.AddHeader("Accept", "application/json");
+                // request.AddHeader("Prefer", "status=200");
+                // request.AddHeader("SessionToken", sessionToken);
 
-                var overrideResponse = await client.ExecuteAsync(request);
+                //request.AddParameter("application/json", requestBody, ParameterType.RequestBody);
 
+                await client.Authenticator.Authenticate(client, request);
+
+                //Try to get API response
                 try
                 {
-                    //var doorOverrideResponse = await Task.Run(() => JsonConvert.DeserializeObject<DoorOverrideResponse>(overrideResponse.Content));
+                    //Get API response
+                    var overrideResponse = await client.PostAsync(request, cancellationToken: default);
+
+                    //Output response to console
+                    Console.WriteLine($"Override Response: {overrideResponse.Content}");
 
                     if (overrideResponse.IsSuccessful)
                     {
@@ -238,15 +294,15 @@ namespace DoorOverrideAPI.Services
                     }
                     else
                     {
-                        return $"Response: {overrideResponse.Content}, Status Code: {overrideResponse.StatusDescription}, Request Body: {requestBody}";
+                        return $"Failure: {overrideResponse.Content}, Status Code: {overrideResponse.StatusDescription}, Request Body: {overrideResponse.Content}";
                         //return "failure";
                     }
                 }
                 catch (Exception e)
                 {
                     //error handler in-case real token request fails
-
-                    return "failure";
+                    Console.WriteLine($"Exception: {e.Message}");
+                    return "Error executing door override request: " + e.Message;
                 }
             });
         }

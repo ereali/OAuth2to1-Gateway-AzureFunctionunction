@@ -16,7 +16,7 @@ namespace DoorOverrideAPI
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
-            log.LogInformation("Azure HTTP Function running in C# beginning door override request");
+            log.LogInformation("Azure HTTP Function running in C# .NET Core beginning door override request");
 
             string doorID = req.Headers["doorID"];
             string doorStateInit = req.Headers["doorState"];
@@ -26,11 +26,13 @@ namespace DoorOverrideAPI
             int doorState = Convert.ToInt32(doorStateInit);
             int doorScheduledState = Convert.ToInt32(doorScheduledStateInit);
 
+            //Output request info in log
             log.LogInformation($"Door ID(s): {doorID}");
             log.LogInformation($"Door State: {doorState.ToString()}");
             log.LogInformation($"Door Scheduled Override Duration: {doorScheduledState.ToString()}");
             log.LogInformation($"Request ID: {requestID}");
 
+            //Output hostname in log
             string clientHostName = GetEnvironmentVariable("HOST_NAME");
             log.LogInformation(clientHostName);
 
@@ -90,5 +92,6 @@ namespace DoorOverrideAPI
         {
             return Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
         }
+
     }
 }
