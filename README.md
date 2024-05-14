@@ -1,45 +1,164 @@
-# OAuth 2.0 to 1.0a Gateway Azure Function to facilitate on-premise authentication
+# OAuth2 to OAuth1 Gateway Azure Function
 
 ## Overview
 
-This project implements a robust C# .NET Azure Function that acts as an API gateway to convert OAuth 2.0 tokens into OAuth 1.0a tokens, facilitating secure on-premise authentication. 
-This is primarily for use with the Transact System Enterprise (TSE) suite of APIs but can be adapted to fit several use-cases.
+This project implements a robust C# .NET Azure Function that acts as an API gateway to convert OAuth 2.0 tokens into OAuth 1.0a tokens, facilitating secure on-premise authentication.
 
-## Key Components
+### Table of Contents
 
-### 1. Models
+- [Overview](#overview)
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Setup](#setup)
+  - [Prerequisites](#prerequisites)
+  - [Configuration](#configuration)
+  - [Build and Run](#build-and-run)
+- [Usage](#usage)
+- [Code Overview](#code-overview)
+  - [Models](#models)
+  - [Services](#services)
+  - [Azure Functions](#azure-functions)
+  - [Configuration Files](#configuration-files)
+- [Related Projects](#related-projects)
+- [Contributing](#contributing)
+- [Authors and Acknowledgments](#authors-and-acknowledgments)
+- [License](#license)
 
-- **TokenRequest.cs**: 
-  - Structure for incoming token requests.
-  - Properties include `clientId`, `clientSecret`, `grantType`, `code`, and `redirectUri`.
+### Features
 
-- **TokenResponse.cs**:
-  - Structure for outgoing token responses.
-  - Properties include `oauthToken`, `oauthTokenSecret`, and `userId`.
+- Converts OAuth 2.0 tokens to OAuth 1.0a tokens.
+- Handles token validation and response formatting.
+- Integrates with Azure Functions for seamless deployment and scaling.
 
-### 2. Services
+### Technologies Used
 
-- **OAuthService.cs**:
-  - Core logic for token conversion.
-  - Methods:
-    - `ValidateToken(TokenRequest request)`: Validates the incoming OAuth 2.0 token request.
-    - `ConvertToOAuth1(TokenRequest request)`: Converts the validated OAuth 2.0 token to OAuth 1.0a token.
-    - `GenerateTokenResponse(TokenRequest request)`: Generates the token response for the client.
+- **C# .NET Core 3.1**
+- **Azure Functions**
+- **RestSharp** for HTTP requests
 
-### 3. Azure Functions
+### Setup
 
-- **SC-DoorOverride.cs**:
-  - Main entry point for the Azure Function.
-  - Handles HTTP requests:
-    - Validates the request payload.
-    - Calls `OAuthService` to convert tokens.
-    - Sends back the converted token as an HTTP response.
-  - Endpoint: `/api/convert-token`
+#### Prerequisites
 
-### 4. Configuration
+- .NET SDK (version 3.1 or later)
+- Azure Functions Core Tools
+- Azure Subscription
+
+#### Configuration
+
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/ereali/OAuth2to1-Gateway-AzureFunction.git
+    cd OAuth2to1-Gateway-AzureFunction
+    ```
+
+2. Update `appsettings.json` with your OAuth API credentials:
+    ```json
+    {
+      "APIConnect": {
+        "OAuthSecretKey": "**************************************",
+        "OAuthConsumerKey": "**************************************",
+        "InstitutionRouteId": "**************************************",
+        "MerchantAuthorization": "**************************************"
+      }
+    }
+    ```
+
+3. Update `APIGlobalVars` with your application server hostname:
+    ```csharp
+    public class APIGlobalVars
+    {
+        public readonly static string HostName = "hostname";
+        public static string IncludeImageYes = "Include";
+        public static string IncludeImageNo = "Exclude";
+    }
+    ```
+
+#### Build and Run
+
+1. Install dependencies and build the project:
+    ```bash
+    dotnet build
+    ```
+
+2. Start the Azure Function locally:
+    ```bash
+    func start
+    ```
+
+### Usage
+
+1. Send an OAuth 2.0 token request to the deployed function endpoint.
+2. The function processes the request, converts the token, and responds with an OAuth 1.0a token.
+3. Example request body (JSON):
+    ```json
+    {
+      "clientId": "your-client-id",
+      "clientSecret": "your-client-secret",
+      "grantType": "authorization_code",
+      "code": "authorization-code",
+      "redirectUri": "your-redirect-uri"
+    }
+    ```
+
+### Code Overview
+
+#### Models
+
+- **TokenRequest.cs**: Defines the structure for incoming token requests.
+    ```csharp
+    public class TokenRequest
+    {
+        public string ClientId { get; set; }
+        public string ClientSecret { get; set; }
+        public string GrantType { get; set; }
+        public string Code { get; set; }
+        public string RedirectUri { get; set; }
+    }
+    ```
+
+- **TokenResponse.cs**: Defines the structure for token response.
+    ```csharp
+    public class TokenResponse
+    {
+        public string OAuthToken { get; set; }
+        public string OAuthTokenSecret { get; set; }
+        public string UserId { get; set; }
+    }
+    ```
+
+#### Services
+
+- **OAuthService.cs**: Handles token validation and conversion logic.
+    ```csharp
+    public class OAuthService
+    {
+        public TokenResponse ConvertToOAuth1(TokenRequest request)
+        {
+            // Conversion logic here
+        }
+    }
+    ```
+
+#### Azure Functions
+
+- **SC-DoorOverride.cs**: Main Azure Function handling HTTP requests and converting tokens using `OAuthService`.
+    ```csharp
+    public static class SCDoorOverride
+    {
+        [FunctionName("ConvertToken")]
+        public static async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
+            ILogger log)
+        {
+            // Function logic here
+        }
+    }
+    ```
+
+#### Configuration Files
 
 - **host.json**: Configuration for Azure Functions runtime.
-  - Example settings:
     ```json
     {
       "version": "2.0",
@@ -52,9 +171,8 @@ This is primarily for use with the Transact System Enterprise (TSE) suite of API
       }
     }
     ```
-  
+
 - **local.settings.json**: Local settings for Azure Functions, including environment variables.
-  - Example:
     ```json
     {
       "IsEncrypted": false,
@@ -65,73 +183,18 @@ This is primarily for use with the Transact System Enterprise (TSE) suite of API
     }
     ```
 
-- **azure-pipelines.yml**: CI/CD pipeline configuration.
-  - Stages include build, test, and deploy.
+### Related Projects
 
-## Getting Started
+- [AWS IoT 1Click Lambda Door Control](https://github.com/ereali/AWS-IoT1Click-Lambda-DoorControl)
 
-### Prerequisites
+### Contributing
 
-- .NET SDK (version 3.1 or later)
-- Azure Functions Core Tools
-- Azure Subscription
+**Note**: This project is no longer supported. However, contributions are still welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-### Setup
+### Authors and Acknowledgments
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/ereali/OAuth-2.0---1.0a-gateway-Azure-Function.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd OAuth-2.0---1.0a-gateway-Azure-Function
-   ```
-3. Install dependencies and build the project:
-   ```bash
-   dotnet build
-   ```
+- **Primary Developer**: Edward Reali
 
-### Running Locally
-
-1. Start the Azure Function locally:
-   ```bash
-   func start
-   ```
-2. Test the function using tools like Postman:
-   - URL: `http://localhost:7071/api/convert-token`
-   - Method: POST
-   - Body (JSON):
-     ```json
-     {
-       "clientId": "your-client-id",
-       "clientSecret": "your-client-secret",
-       "grantType": "authorization_code",
-       "code": "authorization-code",
-       "redirectUri": "your-redirect-uri"
-     }
-     ```
-
-### Deployment
-
-1. Deploy the function to Azure:
-   ```bash
-   func azure functionapp publish <FunctionAppName>
-   ```
-
-## Usage
-
-- Send an OAuth 2.0 token request to the deployed function endpoint.
-- The function processes the request, converts the token, and responds with an OAuth 1.0a token.
-- Example response:
-  ```json
-  {
-    "oauthToken": "oauth-token-value",
-    "oauthTokenSecret": "oauth-token-secret",
-    "userId": "user-id"
-  }
-  ```
-
-## License
+### License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-© 2024 Edward Reali
