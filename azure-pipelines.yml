@@ -8,10 +8,10 @@ trigger:
 
 variables:
   # Azure Resource Manager connection created during pipeline creation
-  azureSubscription: '49c5da93-8de8-4dc3-9e13-8a74c5b10d78'
+  azureSubscription: ''
 
   # Function app name
-  functionAppName: 'SC-APIGateway'
+  functionAppName: ''
 
   # Agent VM image name
   vmImageName: 'windows-2022'
